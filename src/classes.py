@@ -9,6 +9,20 @@ import texter as txt
 from threading import Thread, Timer
 import mveudisto
 
+#region LinkText
+class LinkText(ft.Text):
+    def __init__(self, text:str, url:str, **kwargs):
+        super().__init__(
+            spans=[
+                ft.TextSpan(
+                    text,
+                    url=url,
+                    style=ft.TextStyle(color=ft.Colors.BLUE, decoration=ft.TextDecoration.UNDERLINE, decoration_color=ft.Colors.BLUE),
+                ),
+            ],
+            **kwargs
+        )
+
 #region TopBar
 class TopBar(ft.Container):
     def __init__(self, open_menu, **kwds):
@@ -165,13 +179,14 @@ class LessonsList(ft.Container):
             )
             if i < size:
                 column_content.append(
-                    ft.Container(ft.Divider(
+                    ft.Container(
+                        ft.Divider(
                         ft.Colors.WHITE,
                         4,
                         thickness=2,
                         opacity=0.7
                     ),
-                    width=500)
+                    width=380)
                 )
 
 
@@ -413,7 +428,7 @@ class StatusWindow(ft.BottomAppBar):
             self._timer.start()
 
 #region LoginForm
-class LoginForm(ft.Container):
+class LoginForm(ft.SafeArea):
     def __init__(self, on_auth = None):
         self.on_auth = on_auth
 
@@ -435,17 +450,34 @@ class LoginForm(ft.Container):
                 ft.Text("Введите Данные от аккаунта InStudy"),
                 login_input,
                 password_input,
-                save_btn
+                save_btn,
+                ft.Divider(
+                    height=2,
+                    opacity=0.5
+                ),
+                LinkText("Зачем нужны данные", "https://github.com/ilyagagara/raspi-loon/WHYDATA.md", size=13),
+                ft.Text(
+                    "Сделал Ilya Gagara\nв 2026",
+                    opacity=0.5,
+                    text_align=ft.TextAlign.CENTER,
+                    size=10
+                )
             ],
             expand=True,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            alignment=ft.MainAxisAlignment.CENTER
+        )
+
+        base = ft.Container(
+            content=form,
+            visible=True,
+            alignment=ft.Alignment.CENTER,
+            expand=True,
         )
         
         super().__init__(
-            content=form,
-            padding=3,
-            visible=True,
-            alignment=ft.Alignment.CENTER
+            content=base,
+            expand=True
         )
 
     def _on_click(self):

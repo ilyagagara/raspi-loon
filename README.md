@@ -5,15 +5,9 @@
 </picture><br>
 
 **Удобное приложение для просмотра расписания МВЕУ** <br>
-<big><big>[**📥 Скачать | 📃 Релизы**](https://github.com/ilyagagara/raspi-loon/releases)</big></big>
+[📥 Скачать | 📃 Релизы](https://github.com/ilyagagara/raspi-loon/releases)
+> Приложение создано только для сайта InStudy - disto.mveu.ru (учащихся в МВЕУ | МВЕК)
 </div>
-
-> Приложение создано только для сайта [InStudy - disto.mveu.ru](https://disto.mveu.ru/) (учащихся в МВЕУ | МВЕК)
-
-### 📚 Приложение написано на [Python](https://www.python.org/) используя библиотеки:
-- [Flet](https://github.com/flet-dev/flet/)
-- [requests](https://pypi.org/project/requests/)
-- [beautifulsoup4](https://pypi.org/project/beautifulsoup4/)
 
 ## 💡 Преимущества
 - Расписание можно смотреть без интернета.
@@ -37,3 +31,8 @@
 - *Я хотел использовать запрос на timeo.mveu.ru, чтобы не требовать пароль и почту, но он был приостановлен на момент создания (24 октября) и говорят, что он может перестать работать вовсе.*
 - Приложение весит **100МБ+** из-за того, что оно написано на **python**. Он очень удобен и понятен, так что я выбрал его
 и библиотеку **Flet**, которая позволяет создавать программы
+
+## 📚 Библиотеки | Модули:
+- [Flet](https://github.com/flet-dev/flet/)
+- [requests](https://pypi.org/project/requests/)
+- [beautifulsoup4](https://pypi.org/project/beautifulsoup4/)
