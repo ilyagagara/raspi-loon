@@ -455,7 +455,7 @@ class LoginForm(ft.SafeArea):
                     height=2,
                     opacity=0.5
                 ),
-                LinkText("Зачем нужны данные", "https://github.com/ilyagagara/raspi-loon/WHYDATA.md", size=13),
+                LinkText("Зачем нужны данные", "https://github.com/ilyagagara/raspi-loon/blob/main/WHYDATA.md", size=13),
                 ft.Text(
                     "Сделал Ilya Gagara\nв 2026",
                     opacity=0.5,
