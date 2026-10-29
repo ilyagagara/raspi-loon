@@ -16,4 +16,4 @@
 
 <hr>
 
-### [< Главная Страница](https://https://github.com/ilyagagara/raspi-loon/tree/main)
+### [< Главная Страница](https://github.com/ilyagagara/raspi-loon/tree/main)
