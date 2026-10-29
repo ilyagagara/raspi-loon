@@ -1,24 +1,24 @@
 # 📘 RasPi-Loon
-Удобное приложение для просмотра расписания МВЕУ
-
+<div align="center">
 <picture>
     <img src="Banner.png" width=70%>
-</picture>
+</picture><br>
 
-### [> Скачать | Перейти к Релизам](https://github.com/ilyagagara/raspi-loon/releases)
+**Удобное приложение для просмотра расписания МВЕУ** <br>
+<big><big>[**📥 Скачать | 📃 Релизы**](https://github.com/ilyagagara/raspi-loon/releases)</big></big>
+</div>
 
-*Приложение создано только для сайта [InStudy - disto.mveu.ru](https://disto.mveu.ru/) (учащихся в МВЕУ | МВЕК)*
+> Приложение создано только для сайта [InStudy - disto.mveu.ru](https://disto.mveu.ru/) (учащихся в МВЕУ | МВЕК)
 
-# ℹ️ О приложении
-📚 Приложение написано на [Python](https://www.python.org/) используя библиотеки:
+### 📚 Приложение написано на [Python](https://www.python.org/) используя библиотеки:
 - [Flet](https://github.com/flet-dev/flet/)
 - [requests](https://pypi.org/project/requests/)
 - [beautifulsoup4](https://pypi.org/project/beautifulsoup4/)
 
 ## 💡 Преимущества
-- 🛜 Расписание можно смотреть без интернета.
-- ⚡ Не нужно заходить в браузер и входить в аккаунт каждый раз, чтобы посмотреть расписание
-- 🔓 Код приложения полностью открыт
+- Расписание можно смотреть без интернета.
+- Не нужно заходить в браузер и входить в аккаунт каждый раз, чтобы посмотреть расписание
+- Код приложения полностью открыт
 
 ## ℹ️ Как Приложение Работает
 - Сначало потребуеться **почта** и **пароль** от вашего аккаунт InStudy
