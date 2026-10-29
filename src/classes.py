@@ -138,7 +138,7 @@ class Lesson(ft.Container):
         super().__init__(
             width=500,
             content=frames,
-            padding=10,
+            padding=ft.Padding.only(left=30),
             **kwargs,
         )
 
@@ -367,7 +367,8 @@ class StatusWindow(ft.BottomAppBar):
 
         super().__init__(
             height=45,
-            padding=3,
+            padding=ft.Padding(3),
+            margin=ft.Margin.only(bottom=40),
             content=self.content_row,
             visible=True,
             bgcolor=ft.Colors.TRANSPARENT,
