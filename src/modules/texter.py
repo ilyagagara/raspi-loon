@@ -4,6 +4,8 @@
 # https://azzikx.com/  |
 # =-=-=-=-=-=-=-=-=-=-=.
 
+# This module helps with text
+
 from datetime import datetime
 
 DATES = {
@@ -38,14 +40,16 @@ def get_cur_date():
     """Return current date in DD.MM format"""
     curdate = datetime.now()
 
-    day = curdate.day
-    if day < 10: day = "0" + str(day)
+    return curdate.strftime("%d.%m")
+    #return "25.10" # ignore this line, its for test
 
-    month = curdate.month
-    if month < 10: month = "0" + str(month)
-
-    return f"{day}.{month}"
-    #return "25.10"
+def timestamp_date(time:int, full:bool=False):
+    """Returns date from time stamp if `full` returns `DD.MM.YYYY HH:MM` else `DD.MM`"""
+    date = datetime.fromtimestamp(time)
+    if full:
+        return date.strftime("%d.%m.%Y %H:%M")
+    else:
+        return date.strftime("%d.%m")
 
 def less_count(lessons):
     """Returns count of lessons with "Пара" (or "Нет занятий") text"""
@@ -95,7 +99,7 @@ def safe_get(cur_list:list, index:int, default=None):
 
 
 ERRORS = {
-    "connection" : "Ошибка подключения",
+    "connection" : "Ошибка подключения. Возможно нет интернета",
     "auth" : "Ошибка входа. Возможно неверные данные",
     "unknown" : "Неизвестная ошибка",
     "update" : "При обновлении расписания произошла ошибка."

@@ -4,9 +4,12 @@
 # https://azzikx.com/  |
 # =-=-=-=-=-=-=-=-=-=-=.
 
+# All screen elements stores here
+
 import flet as ft
-import texter as txt
 from threading import Thread, Timer
+
+import modules.texter as txt
 import mveudisto
 
 #region LinkText
@@ -25,18 +28,100 @@ class LinkText(ft.Text):
 
 #region TopBar
 class TopBar(ft.Container):
-    def __init__(self, open_menu, **kwds):
-        btn = ft.FilledButton(
-            icon=ft.Icons.FORMAT_LIST_BULLETED_ROUNDED,
-            on_click=open_menu
-        )
+    def __init__(self, call_back:function = None, back:bool=False, **kwds):
+        if back:
+            arrow = ft.IconButton(
+                icon=ft.Icons.ARROW_BACK,
+                data="back",
+                on_click=call_back,
+            )
+            controls=[arrow]
+        else:
+            btn = ft.IconButton(
+                icon=ft.Icons.FORMAT_LIST_BULLETED_ROUNDED,
+                data="menu",
+                on_click=call_back,
+            )
+            title = ft.Row(
+                controls=[
+                    ft.Text("RasPi-Loon"),
+                    ft.Image(
+                        "icon.svg",
+                        height=40
+                    )
+                ]
+            )
+            notification = ft.IconButton(
+                ft.Icons.NOTIFICATIONS,
+                data="wip",
+                on_click=call_back
+            )
+            controls=[btn, title, notification]
 
         row = ft.Row(
-            controls=[btn]
+            controls=controls,
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            expand=True
         )
 
         super().__init__(
             content=row,
+            padding=ft.Padding(left=15),
+            **kwds
+        )
+
+#region BurgerMenu
+RED_TEXT = ["logout"]
+class BurgerMenu(ft.Container):
+    def __init__(self, elements:list[list[ft.Icon, str]], callback:function, **kwds):
+        controls = [ft.Text("RasPi-Loon", size=40)]
+
+        def _on_click(e):
+            d = e.control.data
+            callback(d)
+
+        for data in elements:
+            icon, title = data[0], data[1]
+            call_data = data[2] if len(data) >= 3 else None
+
+            color = ft.Colors.RED if call_data in RED_TEXT else ft.Colors.ON_SURFACE
+            row = ft.Button(
+                ft.Row(
+                    controls=[
+                        ft.Icon(icon, scale=1.5, color=color),
+                        ft.Text(title, size=20, color=color)
+                    ],
+                ),
+                data=call_data,
+                on_click=_on_click,
+                height=50
+            )
+
+            controls.append(row)
+
+        column = ft.Column(
+            controls=controls,
+            horizontal_alignment=ft.MainAxisAlignment.CENTER,
+            expand=True
+        )
+        
+        super().__init__(
+            content=column,
+            alignment=ft.Alignment.CENTER,
+            expand=True,
+            padding=ft.Padding(left=20, right=20),
+            **kwds
+        )
+
+#region WorkInProgress
+class WorkInProgress(ft.Container):
+    def __init__(self, **kwds):
+        info = ft.Text("Страница в Разработке!", size=20)
+
+        super().__init__(
+            content=info,
+            alignment=ft.Alignment.CENTER,
+            expand=True,
             **kwds
         )
 
@@ -86,14 +171,14 @@ class ArrowSelector(ft.Row):
     def _prev_click(self, e):
         if self.current_index > 0:
             self.current_index -= 1
-            self._apply_change()
+            self._apply_change(True)
 
     def _next_click(self, e):
         if self.current_index < len(self.items) - 1:
             self.current_index += 1
-            self._apply_change()
+            self._apply_change(True)
 
-    def _apply_change(self):
+    def _apply_change(self, clicked:bool=None):
         self.current_index = max(min(len(self.items) - 1, self.current_index), 0)
 
         if any(self.items):
@@ -103,7 +188,7 @@ class ArrowSelector(ft.Row):
         
         self._update_buttons()
         self.update()
-        if self.on_change_callback:
+        if self.on_change_callback and clicked:
             self.on_change_callback(self.current_index, txt.safe_get(self.items, self.current_index, "None"))
 
     def _update_buttons(self):
@@ -123,7 +208,7 @@ class Lesson(ft.Container):
                 ft.Text(start_time, size=28),
                 ft.Divider(height=2,
                             thickness=1.5,
-                            color=ft.Colors.WHITE,
+                            color=ft.Colors.ON_SURFACE,
                             opacity=0.5),
                 ft.Text(end_time, size=28)
             ],
@@ -134,7 +219,7 @@ class Lesson(ft.Container):
 
         infoframe = ft.Column(
             controls=[
-                ft.Text(txt.short(title), size=20, weight=ft.FontWeight.BOLD),
+                ft.Text(title, size=20, width=300, weight=ft.FontWeight.BOLD, overflow=ft.TextOverflow.ELLIPSIS),
                 ft.Text(aud, size = 20),
                 ft.Text(txt.short_name(teacher), size = 20, opacity=0.7)
             ],
@@ -181,7 +266,7 @@ class LessonsList(ft.Container):
                 column_content.append(
                     ft.Container(
                         ft.Divider(
-                        ft.Colors.WHITE,
+                        ft.Colors.ON_SURFACE,
                         4,
                         thickness=2,
                         opacity=0.7
@@ -205,51 +290,50 @@ class LessonsList(ft.Container):
 WEEK_NAMES = ["ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС"]
 #region Schedule
 class Schedule(ft.Container):
-    # Updates Periods ("< 19 Oct - 25 Oct >" chooser)
-    def update_periods(self, start_date = None, first_load=False):
-        self.periods.clear()
-
-        if not first_load:
-            print("Updating")
-            suc, err = mveudisto.updateSchedule()
-
-            if not suc:
-                print("error while updating:", err)
-                return False, err
-
-        schedule = mveudisto.getSchedule()
-
+    def _update_tabs(self, offline:bool=None, start_date=None, lessons:list=None, on_upd:function=None):
+        # > Updates periods
         start_index = None
-        page_id = None
-        sorted_keys = sorted(schedule.keys(), key=int)
-        for key in sorted_keys:
-            data:dict = schedule[key]
+        if not lessons:
+            self.periods.clear()
+            
+            if not offline:
+                print("Updating")
+                suc, err = self.student.update_schedule(lambda mssg: on_upd(True, f" {mssg}", True))
 
-            keys = list(data.keys())
-            first, last = keys[0], keys[-1]
+                if not suc:
+                    print("error while updating:", err)
+                    return False, err
 
-            if start_date in keys:
-                start_index = len(self.periods)
-                page_id = key
+            schedule = self.student.get_schedule()
 
-            self.periods.append({
-                'name' : f"{txt.get_date(first, True)} - {txt.get_date(last, True)}",
-                'lessons' : data
-                })
+            page_id = None
+            sorted_keys = sorted(schedule.keys(), key=int)
+            for key in sorted_keys:
+                data:dict = schedule[key]
 
-        if not page_id and any(sorted_keys):
-            page_id = sorted_keys[0]
+                keys = list(data.keys())
+                first, last = keys[0], keys[-1]
 
-        self.arr_sel.update_items([p["name"] for p in self.periods])
-        self.arr_sel.current_index = start_index or 0
+                if start_date in keys:
+                    start_index = len(self.periods)
+                    page_id = key
 
-        self.arr_sel._apply_change()
+                self.periods.append({
+                    'name' : f"{txt.get_date(first, True)} - {txt.get_date(last, True)}",
+                    'lessons' : data
+                    })
 
-        is_found = self.update_tabs(schedule.get(str(page_id), {}), start_date)
-        return is_found and start_index != None, "found"
+            if not page_id and any(sorted_keys):
+                page_id = sorted_keys[0]
+            
+            self.arr_sel.update_items([p["name"] for p in self.periods])
+            self.arr_sel.current_index = start_index or 0
+            self.arr_sel._apply_change()
 
-    # Updates weeks schedlue
-    def update_tabs(self, lessons, start_date = None):
+            lessons = schedule.get(str(page_id), {})
+        found_period = bool(start_index)
+
+        # > Updating Tabs
         tab_headers = []
         tab_views = []
 
@@ -270,6 +354,8 @@ class Schedule(ft.Container):
 
             tab_views.append(LessonsList(title, lessons_list))
 
+        found_date = bool(start_index)
+
         if not any(tab_headers):
             tab_headers.append(ft.Tab(label="Инфо"))
             tab_views.append(ft.Text("Расписание пустое"))
@@ -280,49 +366,43 @@ class Schedule(ft.Container):
         self.tabs.length = len(tab_headers)
         self.tabs.selected_index = start_index or 0
 
-        self.tabs.update()
+        date = txt.timestamp_date(self.student.get_last_upd(), True)
+        self.upddate.value = f"Последнее обновление: {date}"
 
-        return start_index != None
+        self.update()
+        
+        return (found_period and found_date), "found"
+        
+    def update_schedule(self, offline:bool=False, manual:bool=False, on_res:function = None):
+        if not offline and not manual:
+            if not self.student.can_update():
+                on_res(True, "declined")
+                print("Auto-update is declined")
+                return
 
-    def update_start(self, first_load=False):
         curdate = txt.get_cur_date()
 
-        return self.update_periods(curdate, first_load)
-        
+        def _start():
+            data = self._update_tabs(offline, curdate, on_upd=on_res)
 
-    def update(self, first_load=False):
-        Thread(target=self.update_start, args=[first_load,]).start()
+            if on_res:
+                on_res(*data)
 
-    def update_attempt(self):
-        if mveudisto.can_update():
-            return self.update_start()
+        if offline:
+            _start()
         else:
-            return True, "declined"
-            print("Auto-update is declined")
+            Thread(target=_start).start()
 
-    def on_lifecycle_change(self, e: ft.AppLifecycleStateChangeEvent):
-        current_state = e.state
-
-        if current_state == "resumed":
-            self.update_attempt()
-
-    def __init__(self, **kwargs):
+    def __init__(self, student:mveudisto.Student, **kwargs):
+        self.student = student
         self.periods = []
 
         # Date Period Selector    
         def on_changed(index, _):
             if len(self.periods) > index:
-                self.update_tabs(self.periods[index]['lessons'])
+                self._update_tabs(lessons=self.periods[index]['lessons'])
 
         self.arr_sel = ArrowSelector([], on_change=on_changed)
-
-        # Floating Button
-        def on_click_fbtn(e):
-            self.update()
-
-        self.float_button = ft.FloatingActionButton(
-            ft.Icon(ft.Icons.AUTORENEW), on_click=on_click_fbtn
-        )
 
         # Week Tabs
         self.tab_bar_view = ft.TabBarView(
@@ -349,6 +429,8 @@ class Schedule(ft.Container):
             expand=True
             )
 
+        self.upddate = ft.Text("", opacity=0.7)
+
         super().__init__(
             content=ft.Column(
                 controls=[
@@ -356,8 +438,10 @@ class Schedule(ft.Container):
                     ft.Container(
                         content=self.tabs,
                         expand=True,
-                    )
+                    ),
+                    self.upddate
                 ],
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 expand=True
             ),
             expand=True,
@@ -368,6 +452,7 @@ class Schedule(ft.Container):
 class StatusWindow(ft.BottomAppBar):
     def __init__(self):
         self.statusid = 0
+        self._maxpriority = 0
         self._timer = None
 
         self.icon = ft.Icon(ft.Icons.AUTORENEW)
@@ -376,23 +461,24 @@ class StatusWindow(ft.BottomAppBar):
         self.content_row = ft.Row(
             [self.icon, self.info],
             alignment=ft.MainAxisAlignment.CENTER,
-            vertical_alignment=ft.CrossAxisAlignment.CENTER,
-            visible=False,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER
         )
 
         super().__init__(
             height=45,
-            padding=ft.Padding(3),
-            margin=ft.Margin.only(bottom=40),
+            opacity=0,
+            animate_opacity=100,
             content=self.content_row,
-            visible=True,
-            bgcolor=ft.Colors.TRANSPARENT,
+            margin=ft.Margin.only(bottom=30),
+            padding=ft.Padding(3),
         )
 
     def hide_timeout(self, id):
         if self.statusid == id:
-            self.content_row.visible = False
-            self.bgcolor = ft.Colors.TRANSPARENT
+            self._easyprority = False
+            self._maxpriority = 0
+
+            self.opacity = 0
             if self.page:
                 self.update()
 
@@ -402,24 +488,30 @@ class StatusWindow(ft.BottomAppBar):
         icon: ft.Icons = ft.Icons.INFO_OUTLINE,
         duration: float = None,
         is_error=False,
+        priority:int=1,
+        easy_priority:bool=False
     ):
+        if self._maxpriority > priority and not self._easyprority:
+            return
+
+        self._easyprority = easy_priority
+        self._maxpriority = priority
+        
         if self._timer:
             self._timer.cancel()
 
         self.statusid += 1
 
         if text is None:
-            self.content_row.visible = False
-            self.bgcolor = ft.Colors.TRANSPARENT
+            self.opacity = 0
         else:
-            self.content_row.visible = True
+            self.opacity = 1
             self.bgcolor = ft.Colors.RED_600 if is_error else ft.Colors.BLACK_54
             self.info.value = text
             self.icon.icon = icon
 
         print("new status", text)
 
-        # Если страница доступна, обновляем контрол
         if self.page:
             self.update()
 
@@ -455,7 +547,7 @@ class LoginForm(ft.SafeArea):
                     height=2,
                     opacity=0.5
                 ),
-                LinkText("Зачем нужны данные", "https://github.com/ilyagagara/raspi-loon/blob/main/WHYDATA.md", size=13),
+                LinkText("Зачем нужны данные и Хранение данных", "https://github.com/ilyagagara/raspi-loon/blob/main/WHYDATA.md", size=13),
                 ft.Text(
                     "Сделал Ilya Gagara\nв 2026",
                     opacity=0.5,

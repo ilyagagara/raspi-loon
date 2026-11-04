@@ -1,6 +1,6 @@
 [project]
 name = "RasPi-Loon"
-version = "0.1.5"
+version = "1.0.0"
 description = ""
 readme = "README.md"
 requires-python = ">=3.10"
@@ -30,7 +30,7 @@ pythonpath = ["src"]
 
 [tool.flet]
 org = "com.chickproduction"
-product = "rasp"
+product = "RasPi-Loon"
 company = "Chick Production"
 copyright = "Copyright (C) 2023-2026 by Flet"
 
@@ -43,3 +43,4 @@ copyright = "Copyright (C) 2023-2026 by Flet"
 
 [tool.flet.app]
 path = "src"
+exclude = ["saves"]
