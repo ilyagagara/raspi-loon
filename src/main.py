@@ -35,6 +35,9 @@ def is_latest_version():
         data:dict = response.json()
         version = data.get("tag_name")
 
+        if not version:
+            return True, APP_VERSION
+
         print("latest version:", version, "current version:", APP_VERSION)
         return (version == APP_VERSION), version
 
