@@ -23,6 +23,8 @@ build/
 .idea/
 .vscode/
 
+# Mine
+hint.txt
 temps/*
 src/saves/*
 !*.example.json

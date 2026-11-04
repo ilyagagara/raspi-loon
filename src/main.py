@@ -6,24 +6,41 @@
 # > Thanks for using RasPi-Loon!
 
 # Main Code
-
-from threading import Thread
-
 import flet as ft
 
-import modules.classes as cs
-import modules.texter as txt
-
-from time import time
-import mveudisto
-
+APP_VERSION = "1.0.0"
+UPD_TEXT = "Идёт обновление расписания..."
+LATEST_UPD_URL = "https://api.github.com/repos/ilyagagara/RasPi-Loon/releases/latest"
+RELEASES_URL = "https://github.com/ilyagagara/raspi-loon/releases/"
 MENU = [
     [ft.Icons.NEWSPAPER, "Расписание", "schedule"],
     [ft.Icons.BOOK, "Дневник", "wip"],
     [ft.Icons.SETTINGS, "Настройки", "wip"],
     [ft.Icons.LOGOUT, "Сменить Данные", "logout"]
 ]
-UPD_TEXT = "Идёт обновление расписания..."
+
+from threading import Thread
+
+
+import modules.classes as cs
+import modules.texter as txt
+import mveudisto
+
+from requests import get
+from time import time
+
+def is_latest_version():
+    try:
+        response = get(LATEST_UPD_URL)
+        data:dict = response.json()
+        version = data.get("tag_name")
+
+        print("latest version:", version, "current version:", APP_VERSION)
+        return (version == APP_VERSION), version
+
+    except Exception as e:
+        print("error while getting version:", e)
+        return True, APP_VERSION
 
 class PageContent():
     def __init__(self, page:ft.Page, reset_call:function):
@@ -116,11 +133,38 @@ class PageContent():
 
         page.add(self.base_container)
 
+        Thread(target=self._check_version).start()
         self.updating = False
         self.is_logged = student.is_logged()
         self.lastpage = "schedule"
         self.curpage = "schedule" if self.is_logged else "login"
 
+    def _check_version(self):
+        is_latest, version = is_latest_version()
+        cur_date = txt.get_cur_date()
+
+        user_data = mveudisto.readJSON(mveudisto.USER_DATA_PATH) or {}
+        last_notify = user_data.get("last_notify")
+
+        if not is_latest and last_notify != cur_date:
+            def _on_click(e):
+                self.page.pop_dialog()
+                if e.control.data == "cancel":
+                    mveudisto.updateJSON(
+                        mveudisto.USER_DATA_PATH,
+                        {"last_notify" : cur_date}
+                    )
+
+            dialog = ft.AlertDialog(
+                ft.Text(f"Доступна новая версия RasPi-Loon {version}!\n(текущая версия: {APP_VERSION})"),
+                title="Обновление",
+                actions=[
+                    ft.Button("Напомнить Завтра", on_click=_on_click, data="cancel"),
+                    ft.FilledButton("Скачать", on_click=_on_click, data="download", url=RELEASES_URL)
+                ]
+            )
+
+            self.page.show_dialog(dialog)
 
     def _try_login(self, login, password):
         res = self.student.set_login(login, password)
@@ -256,7 +300,6 @@ class PageContent():
             self.update_schedule(False)
 
         self.update_page()
-
 
 def main(page: ft.Page):
     print("> START -", page.session.id)
